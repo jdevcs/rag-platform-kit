@@ -1,0 +1,164 @@
+groups:
+  - name: RAG Platform Critical Alerts
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: rate(rag_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: rag-platform
+        annotations:
+          summary: "High error rate detected in RAG platform"
+          description: "Error rate is {{ $value }} errors per second over the last 5 minutes"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/troubleshooting.md"
+
+      # High Response Time Alert
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(rag_request_duration_seconds_bucket[5m])) > 5.0
+        for: 2m
+        labels:
+          severity: warning
+          service: rag-platform
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds over the last 5 minutes"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/performance-tuning.md"
+
+      # Service Unavailable Alert
+      - alert: ServiceUnavailable
+        expr: up{job="rag-platform"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rag-platform
+        annotations:
+          summary: "RAG Platform service is down"
+          description: "RAG Platform service has been down for more than 1 minute"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/deployment.md"
+
+  - name: RAG Operations Alerts
+    rules:
+      # Document Processing Failures
+      - alert: DocumentProcessingFailures
+        expr: rate(rag_document_processing_duration_seconds_count{status="error"}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: rag-platform
+        annotations:
+          summary: "High document processing failure rate"
+          description: "Document processing failure rate is {{ $value }} failures per second"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/troubleshooting.md"
+
+      # Vector Search Performance Issues
+      - alert: VectorSearchSlow
+        expr: histogram_quantile(0.95, rate(rag_vector_search_duration_seconds_bucket[5m])) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+          service: rag-platform
+        annotations:
+          summary: "Vector search is slow"
+          description: "95th percentile vector search time is {{ $value }} seconds"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/performance-tuning.md"
+
+      # LLM Generation Failures
+      - alert: LLMGenerationFailures
+        expr: rate(rag_llm_generation_duration_seconds_count{status="error"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: rag-platform
+        annotations:
+          summary: "High LLM generation failure rate"
+          description: "LLM generation failure rate is {{ $value }} failures per second"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/troubleshooting.md"
+
+  - name: Infrastructure Health Alerts
+    rules:
+      # Vector Store Health Issues
+      - alert: VectorStoreUnhealthy
+        expr: rag_vector_store_health == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rag-platform
+        annotations:
+          summary: "Vector store is unhealthy"
+          description: "Vector store health check failed"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/troubleshooting.md"
+
+      # LLM Service Health Issues
+      - alert: LLMServiceUnhealthy
+        expr: rag_llm_service_health == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: rag-platform
+        annotations:
+          summary: "LLM service is unhealthy"
+          description: "LLM service health check failed"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/troubleshooting.md"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (rag_system_memory_bytes{type="used"} / rag_system_memory_bytes{type="total"}) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: rag-platform
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/performance-tuning.md"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: rag_system_cpu_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: rag-platform
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}%"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/performance-tuning.md"
+
+  - name: Business Metrics Alerts
+    rules:
+      # Low Document Processing Volume
+      - alert: LowDocumentProcessingVolume
+        expr: rate(rag_documents_processed_total[1h]) < 1
+        for: 1h
+        labels:
+          severity: info
+          service: rag-platform
+        annotations:
+          summary: "Low document processing volume"
+          description: "Document processing rate is {{ $value }} documents per hour"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/monitoring.md"
+
+      # High Search Query Volume
+      - alert: HighSearchQueryVolume
+        expr: rate(rag_search_queries_total[5m]) > 100
+        for: 2m
+        labels:
+          severity: info
+          service: rag-platform
+        annotations:
+          summary: "High search query volume"
+          description: "Search query rate is {{ $value }} queries per second"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/monitoring.md"
+
+      # High Generation Request Volume
+      - alert: HighGenerationRequestVolume
+        expr: rate(rag_generation_requests_total[5m]) > 50
+        for: 2m
+        labels:
+          severity: info
+          service: rag-platform
+        annotations:
+          summary: "High generation request volume"
+          description: "Generation request rate is {{ $value }} requests per second"
+          runbook_url: "https://github.com/your-org/rag-platform-kit/docs/monitoring.md"

@@ -3,6 +3,8 @@ from typing import List
 
 from app.models.schemas import SearchQuery, SearchResult, ErrorResponse
 from app.services.retrieval_service import retrieval_service
+from app.core.metrics import track_vector_search
+from app.core.config import settings
 from loguru import logger
 
 router = APIRouter()
@@ -15,6 +17,7 @@ router = APIRouter()
         500: {"model": ErrorResponse}
     }
 )
+@track_vector_search(settings.VECTOR_STORE_TYPE, settings.TOP_K)
 async def search_documents(query: SearchQuery):
     """
     Search for documents similar to the query.

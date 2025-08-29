@@ -386,3 +386,4 @@ dmypy.json
 cython_debug/
 
 tmp/
+chroma_db/

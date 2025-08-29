@@ -1,0 +1,113 @@
+{
+  "id": null,
+  "title": "RAG Platform Overview",
+  "tags": ["rag", "ai", "monitoring"],
+  "style": "dark",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "System Health Status",
+      "type": "stat",
+      "targets": [
+        { "expr": "rag_vector_store_health", "legendFormat": "Vector Store" },
+        { "expr": "rag_llm_service_health", "legendFormat": "LLM Service" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [ {"color": "red", "value": 0}, {"color": "green", "value": 1} ] }
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "Request Rate",
+      "type": "timeseries",
+      "targets": [ { "expr": "rate(rag_requests_total[5m])", "legendFormat": "{{method}} {{endpoint}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    },
+    {
+      "id": 3,
+      "title": "Response Time (95th percentile)",
+      "type": "timeseries",
+      "targets": [ { "expr": "histogram_quantile(0.95, rate(rag_request_duration_seconds_bucket[5m]))", "legendFormat": "{{method}} {{endpoint}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+    },
+    {
+      "id": 4,
+      "title": "Error Rate",
+      "type": "timeseries",
+      "targets": [ { "expr": "rate(rag_errors_total[5m])", "legendFormat": "{{error_type}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+    },
+    {
+      "id": 5,
+      "title": "Document Processing Performance",
+      "type": "timeseries",
+      "targets": [ { "expr": "rate(rag_document_processing_duration_seconds_count[5m])", "legendFormat": "{{file_type}} {{status}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+    },
+    {
+      "id": 6,
+      "title": "Chunks Created",
+      "type": "timeseries",
+      "targets": [ { "expr": "rate(rag_chunks_created_total[5m])", "legendFormat": "{{file_type}} {{status}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+    },
+    {
+      "id": 7,
+      "title": "Vector Search Performance",
+      "type": "timeseries",
+      "targets": [ { "expr": "histogram_quantile(0.95, rate(rag_vector_search_duration_seconds_bucket[5m]))", "legendFormat": "{{vector_store}} (top_k={{top_k}})" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+    },
+    {
+      "id": 8,
+      "title": "Vector Search Similarity Scores",
+      "type": "heatmap",
+      "targets": [ { "expr": "rate(rag_vector_search_similarity_scores_bucket[5m])", "legendFormat": "{{le}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+    },
+    {
+      "id": 9,
+      "title": "LLM Generation Performance",
+      "type": "timeseries",
+      "targets": [ { "expr": "histogram_quantile(0.95, rate(rag_llm_generation_duration_seconds_bucket[5m]))", "legendFormat": "{{provider}} {{model}} {{status}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+    },
+    {
+      "id": 10,
+      "title": "LLM Tokens Used",
+      "type": "timeseries",
+      "targets": [ { "expr": "rate(rag_llm_tokens_total[5m])", "legendFormat": "{{provider}} {{model}} {{token_type}}" } ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+    },
+    {
+      "id": 11,
+      "title": "System Resource Usage",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rag_system_memory_bytes{type=\"used\"} / rag_system_memory_bytes{type=\"total\"} * 100", "legendFormat": "Memory Usage %" },
+        { "expr": "rag_system_cpu_percent", "legendFormat": "CPU Usage %" }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}
+    },
+    {
+      "id": 12,
+      "title": "Business Metrics",
+      "type": "stat",
+      "targets": [
+        { "expr": "rate(rag_documents_processed_total[1h])", "legendFormat": "Documents/hour" },
+        { "expr": "rate(rag_search_queries_total[1m])", "legendFormat": "Queries/minute" },
+        { "expr": "rate(rag_generation_requests_total[1m])", "legendFormat": "Generations/minute" }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
+    }
+  ],
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "version": 1
+}

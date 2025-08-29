@@ -2,9 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 from loguru import logger
+import asyncio
 
 from app.core.config import settings
 from app.api.endpoints import ingestion, retrieval, generation
+from app.core.metrics import metrics_collector
+from app.services.health_monitor import health_monitor
 
 # Display startup information
 print("🚀 Starting RAG Platform Kit...")
@@ -51,33 +54,66 @@ app.include_router(generation.router, prefix=settings.API_V1_STR, tags=["generat
 # Add Prometheus metrics
 Instrumentator().instrument(app).expose(app)
 
+# Add custom metrics endpoint
+@app.get("/metrics")
+async def get_metrics():
+    """Get Prometheus metrics"""
+    return metrics_collector.get_metrics()
+
 @app.get("/")
 async def root():
     return {"message": "RAG Microservice API", "version": settings.VERSION}
 
 @app.get("/health")
 async def health_check():
-    from app.core.vector_store import vector_store
-    
+    """Enhanced health check with component status"""
     try:
-        # Basic health check
+        # Get comprehensive health summary
+        health_summary = await health_monitor.get_health_summary()
+        
+        # Basic health status
+        overall_status = "healthy"
+        if (health_summary.get("vector_store", {}).get("status") == "unhealthy" or
+            health_summary.get("llm_service", {}).get("status") == "unhealthy" or
+            health_summary.get("system", {}).get("status") == "unhealthy"):
+            overall_status = "degraded"
+        
         health_status = {
-            "status": "healthy",
-            "vector_store": settings.VECTOR_STORE_TYPE,
-            "embedding_model": settings.EMBEDDING_MODEL,
-            "llm_provider": settings.LLM_PROVIDER,
-            "timestamp": "2024-01-15T10:30:00Z"
+            "status": overall_status,
+            "vector_store": {
+                "type": settings.VECTOR_STORE_TYPE,
+                "status": health_summary.get("vector_store", {}).get("status", "unknown"),
+                "embedding_model": settings.EMBEDDING_MODEL
+            },
+            "llm_service": {
+                "provider": settings.LLM_PROVIDER,
+                "model": health_summary.get("llm_service", {}).get("model", "unknown"),
+                "status": health_summary.get("llm_service", {}).get("status", "unknown")
+            },
+            "system": health_summary.get("system", {}),
+            "timestamp": health_summary.get("timestamp")
         }
         
-        # Add Ollama-specific info
+        # Add provider-specific info
         if settings.LLM_PROVIDER == "ollama":
-            health_status["ollama_model"] = settings.OLLAMA_MODEL
-            health_status["ollama_url"] = settings.OLLAMA_BASE_URL
+            health_status["llm_service"]["ollama_url"] = settings.OLLAMA_BASE_URL
         
         return health_status
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return {"status": "unhealthy", "error": str(e)}
+
+@app.on_event("startup")
+async def startup_event():
+    """Start health monitoring on startup"""
+    await health_monitor.start_monitoring()
+    logger.info("Health monitoring started")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop health monitoring on shutdown"""
+    await health_monitor.stop_monitoring()
+    logger.info("Health monitoring stopped")
 
 if __name__ == "__main__":
     import uvicorn

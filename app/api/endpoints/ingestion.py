@@ -10,6 +10,7 @@ from app.core.chunking import TextChunker
 from app.core.embeddings import embedding_service
 from app.core.vector_store import vector_store
 from app.models.document_models import DocumentChunk
+from app.core.metrics import track_document_processing
 from loguru import logger
 from uuid import uuid4
 
@@ -24,6 +25,7 @@ file_processor = FileProcessor()
         500: {"model": ErrorResponse}
     }
 )
+@track_document_processing("unknown")
 async def ingest_document(
     file: UploadFile = File(...),
     chunk_params: ChunkRequest = None

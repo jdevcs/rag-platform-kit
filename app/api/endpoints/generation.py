@@ -5,6 +5,7 @@ from app.models.schemas import GenerationRequest, GenerationResponse, ErrorRespo
 from app.core.config import settings
 from app.services.retrieval_service import retrieval_service
 from app.services.llm_service import llm_service
+from app.core.metrics import track_llm_generation
 from loguru import logger
 
 router = APIRouter()
@@ -17,6 +18,7 @@ router = APIRouter()
         500: {"model": ErrorResponse}
     }
 )
+@track_llm_generation(settings.LLM_PROVIDER, settings.OLLAMA_MODEL if settings.LLM_PROVIDER == "ollama" else getattr(settings, f"{settings.LLM_PROVIDER.upper()}_MODEL", "unknown"))
 async def generate_answer(request: GenerationRequest):
     """
     Generate an answer to a query using retrieved context.
